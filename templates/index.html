@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Image Classifier - SPB AI Club</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --burgundy: #660033; --burgundy-l: #8b0044; --bg: #0d0d0d; --surface: #161616; --border: #262626; --text: #e8e8e8; --muted: #666; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between; }
+    header h1 { font-size: 1rem; font-weight: 600; }
+    header span { font-size: .8rem; color: var(--muted); }
+    .main { max-width: 700px; margin: 3rem auto; padding: 0 1.5rem; }
+    h2 { font-size: 1.75rem; font-weight: 700; margin-bottom: .5rem; }
+    .sub { color: var(--muted); font-size: .95rem; margin-bottom: 2rem; }
+
+    /* Upload zone */
+    .upload-zone {
+      border: 2px dashed var(--border); border-radius: 12px;
+      padding: 3rem 2rem; text-align: center; cursor: pointer;
+      transition: border-color .2s, background .2s; position: relative;
+    }
+    .upload-zone:hover, .upload-zone.drag { border-color: var(--burgundy); background: rgba(102,0,51,.05); }
+    .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    .upload-icon { font-size: 2.5rem; margin-bottom: .75rem; }
+    .upload-label { font-size: .95rem; margin-bottom: .3rem; font-weight: 500; }
+    .upload-hint { font-size: .8rem; color: var(--muted); }
+
+    /* Preview + results */
+    .result-wrap { display: none; margin-top: 2rem; }
+    .result-grid { display: grid; grid-template-columns: 200px 1fr; gap: 1.5rem; align-items: start; }
+    .result-img { width: 100%; border-radius: 10px; border: 1px solid var(--border); }
+    .predictions { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; }
+    .pred-title { font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 1rem; }
+    .pred-row { margin-bottom: .9rem; }
+    .pred-label { display: flex; justify-content: space-between; font-size: .875rem; margin-bottom: .3rem; }
+    .pred-name { font-weight: 500; text-transform: capitalize; }
+    .pred-pct { font-family: 'JetBrains Mono', monospace; font-size: .8rem; color: var(--muted); }
+    .pred-bar-bg { height: 6px; border-radius: 3px; background: #222; overflow: hidden; }
+    .pred-bar { height: 100%; border-radius: 3px; background: var(--burgundy); transition: width .5s ease; }
+    .pred-row:first-of-type .pred-bar { background: var(--burgundy-l); }
+
+    .classify-btn {
+      display: block; width: 100%; margin-top: 1.25rem; padding: .7rem;
+      background: var(--burgundy); color: #fff; border: none; border-radius: 8px;
+      font-size: .95rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: background .2s;
+    }
+    .classify-btn:hover { background: var(--burgundy-l); }
+    .classify-btn:disabled { opacity: .5; cursor: not-allowed; }
+    .device-badge { display: inline-block; margin-top: 1.5rem; font-size: .75rem; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Image Classifier</h1>
+    <span>SPB AI &amp; Data Science Club</span>
+  </header>
+
+  <div class="main">
+    <h2>Classify an Image</h2>
+    <p class="sub">Upload any photo - ResNet-50 will identify it from 1,000 ImageNet categories.</p>
+
+    <div class="upload-zone" id="dropzone"
+         ondragover="event.preventDefault();this.classList.add('drag')"
+         ondragleave="this.classList.remove('drag')"
+         ondrop="handleDrop(event)">
+      <input type="file" accept="image/*" onchange="handleFile(this.files[0])" />
+      <div class="upload-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg></div>
+      <div class="upload-label">Drop an image or click to browse</div>
+      <div class="upload-hint">JPG, PNG, WEBP - any size</div>
+    </div>
+
+    <div class="result-wrap" id="resultWrap">
+      <div class="result-grid">
+        <img id="preview" class="result-img" src="" alt="Preview" />
+        <div class="predictions">
+          <div class="pred-title">Top Predictions</div>
+          <div id="predList"></div>
+        </div>
+      </div>
+      <button class="classify-btn" id="classifyBtn" onclick="classify()">Classify</button>
+    </div>
+  </div>
+
+  <script>
+    let currentFile = null;
+
+    function handleDrop(e) {
+      e.preventDefault();
+      document.getElementById('dropzone').classList.remove('drag');
+      const file = e.dataTransfer.files[0];
+      if (file && file.type.startsWith('image/')) handleFile(file);
+    }
+
+    function handleFile(file) {
+      if (!file) return;
+      currentFile = file;
+      const reader = new FileReader();
+      reader.onload = e => {
+        document.getElementById('preview').src = e.target.result;
+        document.getElementById('resultWrap').style.display = 'block';
+        document.getElementById('predList').innerHTML = '';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function classify() {
+      if (!currentFile) return;
+      const btn = document.getElementById('classifyBtn');
+      btn.disabled = true; btn.textContent = 'Classifying...';
+
+      const form = new FormData();
+      form.append('image', currentFile);
+
+      try {
+        const res  = await fetch('/api/classify', { method: 'POST', body: form });
+        const data = await res.json();
+        if (data.error) { alert(data.error); return; }
+
+        // Update preview with server thumbnail
+        document.getElementById('preview').src = 'data:image/jpeg;base64,' + data.thumb;
+
+        // Render predictions
+        const list = document.getElementById('predList');
+        list.innerHTML = data.predictions.map((p, i) => `
+          <div class="pred-row">
+            <div class="pred-label">
+              <span class="pred-name">${p.label.replace(/_/g,' ')}</span>
+              <span class="pred-pct">${p.confidence}%</span>
+            </div>
+            <div class="pred-bar-bg">
+              <div class="pred-bar" style="width:${Math.min(p.confidence,100)}%"></div>
+            </div>
+          </div>`).join('');
+      } finally {
+        btn.disabled = false; btn.textContent = 'Classify';
+      }
+    }
+  </script>
+</body>
+</html>
