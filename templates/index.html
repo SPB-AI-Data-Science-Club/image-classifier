@@ -4,84 +4,67 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Image Classifier - SPB AI Club</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root { --burgundy: #660033; --burgundy-l: #8b0044; --bg: #0d0d0d; --surface: #161616; --border: #262626; --text: #e8e8e8; --muted: #666; }
-    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
-    header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between; }
-    header h1 { font-size: 1rem; font-weight: 600; }
-    header span { font-size: .8rem; color: var(--muted); }
-    .main { max-width: 700px; margin: 3rem auto; padding: 0 1.5rem; }
-    h2 { font-size: 1.75rem; font-weight: 700; margin-bottom: .5rem; }
-    .sub { color: var(--muted); font-size: .95rem; margin-bottom: 2rem; }
-
-    /* Upload zone */
-    .upload-zone {
-      border: 2px dashed var(--border); border-radius: 12px;
-      padding: 3rem 2rem; text-align: center; cursor: pointer;
-      transition: border-color .2s, background .2s; position: relative;
-    }
-    .upload-zone:hover, .upload-zone.drag { border-color: var(--burgundy); background: rgba(102,0,51,.05); }
-    .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-    .upload-icon { font-size: 2.5rem; margin-bottom: .75rem; }
-    .upload-label { font-size: .95rem; margin-bottom: .3rem; font-weight: 500; }
-    .upload-hint { font-size: .8rem; color: var(--muted); }
-
-    /* Preview + results */
-    .result-wrap { display: none; margin-top: 2rem; }
-    .result-grid { display: grid; grid-template-columns: 200px 1fr; gap: 1.5rem; align-items: start; }
-    .result-img { width: 100%; border-radius: 10px; border: 1px solid var(--border); }
-    .predictions { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; }
-    .pred-title { font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 1rem; }
-    .pred-row { margin-bottom: .9rem; }
-    .pred-label { display: flex; justify-content: space-between; font-size: .875rem; margin-bottom: .3rem; }
-    .pred-name { font-weight: 500; text-transform: capitalize; }
-    .pred-pct { font-family: 'JetBrains Mono', monospace; font-size: .8rem; color: var(--muted); }
-    .pred-bar-bg { height: 6px; border-radius: 3px; background: #222; overflow: hidden; }
-    .pred-bar { height: 100%; border-radius: 3px; background: var(--burgundy); transition: width .5s ease; }
-    .pred-row:first-of-type .pred-bar { background: var(--burgundy-l); }
-
-    .classify-btn {
-      display: block; width: 100%; margin-top: 1.25rem; padding: .7rem;
-      background: var(--burgundy); color: #fff; border: none; border-radius: 8px;
-      font-size: .95rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: background .2s;
-    }
-    .classify-btn:hover { background: var(--burgundy-l); }
-    .classify-btn:disabled { opacity: .5; cursor: not-allowed; }
-    .device-badge { display: inline-block; margin-top: 1.5rem; font-size: .75rem; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
-  </style>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
 </head>
 <body>
-  <header>
-    <h1>Image Classifier</h1>
-    <span>SPB AI &amp; Data Science Club</span>
+
+  <header class="site-header">
+    <div class="header-logo">
+      <div class="logo-mark">IC</div>
+      <div>
+        <div class="header-title">Image Classifier</div>
+        <div class="header-sub">SPB AI &amp; Data Science Club</div>
+      </div>
+    </div>
+    <a href="https://github.com/SPB-AI-Data-Science-Club/image-classifier" target="_blank" class="header-link">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/>
+      </svg>
+      GitHub
+    </a>
   </header>
 
   <div class="main">
-    <h2>Classify an Image</h2>
-    <p class="sub">Upload any photo - ResNet-50 will identify it from 1,000 ImageNet categories.</p>
 
-    <div class="upload-zone" id="dropzone"
-         ondragover="event.preventDefault();this.classList.add('drag')"
-         ondragleave="this.classList.remove('drag')"
-         ondrop="handleDrop(event)">
-      <input type="file" accept="image/*" onchange="handleFile(this.files[0])" />
-      <div class="upload-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg></div>
-      <div class="upload-label">Drop an image or click to browse</div>
-      <div class="upload-hint">JPG, PNG, WEBP - any size</div>
-    </div>
-
-    <div class="result-wrap" id="resultWrap">
-      <div class="result-grid">
-        <img id="preview" class="result-img" src="" alt="Preview" />
-        <div class="predictions">
-          <div class="pred-title">Top Predictions</div>
-          <div id="predList"></div>
+    <!-- Left: upload + preview -->
+    <div>
+      <!-- Upload zone (shown when no image) -->
+      <div class="upload-zone" id="uploadZone"
+           ondragover="event.preventDefault(); this.classList.add('drag')"
+           ondragleave="this.classList.remove('drag')"
+           ondrop="handleDrop(event)">
+        <input type="file" accept="image/*" onchange="handleFile(this.files[0])" />
+        <div class="upload-icon">
+          <svg width="44" height="44" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21 15 16 10 5 21"/>
+          </svg>
         </div>
+        <div class="upload-title">Drop an image or click to browse</div>
+        <div class="upload-hint">JPG, PNG, WEBP, GIF - any size</div>
       </div>
-      <button class="classify-btn" id="classifyBtn" onclick="classify()">Classify</button>
+
+      <!-- Preview (shown after image selected) -->
+      <div class="preview-wrap" id="previewWrap">
+        <img id="previewImg" class="preview-img" src="" alt="Preview" />
+        <button class="classify-btn" id="classifyBtn" onclick="classify()">Classify</button>
+        <button class="reset-btn" onclick="reset()">Upload a different image</button>
+      </div>
     </div>
+
+    <!-- Right: results -->
+    <div class="results-panel">
+      <div class="results-label">Predictions</div>
+      <div class="results-empty" id="resultsEmpty">
+        Upload an image and click Classify to see top-5 predictions from the ResNet-50 model.
+      </div>
+      <div id="predList"></div>
+    </div>
+
   </div>
 
   <script>
@@ -89,7 +72,7 @@
 
     function handleDrop(e) {
       e.preventDefault();
-      document.getElementById('dropzone').classList.remove('drag');
+      document.getElementById('uploadZone').classList.remove('drag');
       const file = e.dataTransfer.files[0];
       if (file && file.type.startsWith('image/')) handleFile(file);
     }
@@ -99,43 +82,57 @@
       currentFile = file;
       const reader = new FileReader();
       reader.onload = e => {
-        document.getElementById('preview').src = e.target.result;
-        document.getElementById('resultWrap').style.display = 'block';
+        document.getElementById('previewImg').src = e.target.result;
+        document.getElementById('uploadZone').style.display  = 'none';
+        document.getElementById('previewWrap').classList.add('visible');
         document.getElementById('predList').innerHTML = '';
+        document.getElementById('resultsEmpty').style.display = 'block';
       };
       reader.readAsDataURL(file);
+    }
+
+    function reset() {
+      currentFile = null;
+      document.getElementById('previewImg').src = '';
+      document.getElementById('uploadZone').style.display   = '';
+      document.getElementById('previewWrap').classList.remove('visible');
+      document.getElementById('predList').innerHTML = '';
+      document.getElementById('resultsEmpty').style.display = 'block';
     }
 
     async function classify() {
       if (!currentFile) return;
       const btn = document.getElementById('classifyBtn');
-      btn.disabled = true; btn.textContent = 'Classifying...';
+      btn.disabled = true;
+      btn.textContent = 'Classifying...';
 
       const form = new FormData();
       form.append('image', currentFile);
 
       try {
         const res  = await fetch('/api/classify', { method: 'POST', body: form });
+        if (!res.ok) { const t = await res.text(); throw new Error(t); }
         const data = await res.json();
-        if (data.error) { alert(data.error); return; }
 
-        // Update preview with server thumbnail
-        document.getElementById('preview').src = 'data:image/jpeg;base64,' + data.thumb;
+        document.getElementById('resultsEmpty').style.display = 'none';
+        document.getElementById('predList').innerHTML = data.predictions
+          .map((p, i) => `
+            <div class="prediction">
+              <div class="pred-meta">
+                <span class="pred-name">${p.label.replace(/_/g, ' ')}</span>
+                <span class="pred-pct">${p.confidence}%</span>
+              </div>
+              <div class="pred-track">
+                <div class="pred-fill" style="width:${Math.min(p.confidence, 100)}%"></div>
+              </div>
+            </div>`)
+          .join('');
 
-        // Render predictions
-        const list = document.getElementById('predList');
-        list.innerHTML = data.predictions.map((p, i) => `
-          <div class="pred-row">
-            <div class="pred-label">
-              <span class="pred-name">${p.label.replace(/_/g,' ')}</span>
-              <span class="pred-pct">${p.confidence}%</span>
-            </div>
-            <div class="pred-bar-bg">
-              <div class="pred-bar" style="width:${Math.min(p.confidence,100)}%"></div>
-            </div>
-          </div>`).join('');
+      } catch (err) {
+        alert('Classification failed: ' + err.message);
       } finally {
-        btn.disabled = false; btn.textContent = 'Classify';
+        btn.disabled = false;
+        btn.textContent = 'Classify';
       }
     }
   </script>
