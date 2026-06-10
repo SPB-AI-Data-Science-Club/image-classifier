@@ -1,52 +1,90 @@
 """
 Image Classifier
-Upload any image — ResNet-50 returns top-5 ImageNet predictions with confidence scores.
+Tries to forward inference to the necron GPU worker first (fast).
+Falls back to CPU inference on the VPS using torchvision (slower but always works).
 """
 import io
 import json
-import base64
+import time
 import urllib.request
-from pathlib import Path
 from flask import Flask, render_template, request, jsonify
-from PIL import Image
-import torch
-import torchvision.transforms as T
-from torchvision.models import resnet50, ResNet50_Weights
+import requests as http
 
 app = Flask(__name__)
+app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
 
-# Load model once at startup
-weights = ResNet50_Weights.IMAGENET1K_V2
-model   = resnet50(weights=weights)
-model.eval()
+NECRON          = "http://100.72.210.90:15100"
+CONNECT_TIMEOUT = 4
+READ_TIMEOUT    = 120
 
-DEVICE    = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model     = model.to(DEVICE)
-preprocess = weights.transforms()
+# ── CPU fallback (lazy-loaded on first use) ───────────────────────────
+_cpu_models = {}
 
-IMAGENET_LABELS_URL = (
-    "https://raw.githubusercontent.com/pytorch/hub/master/imagenet_classes.txt"
-)
-_LABELS_CACHE = Path(".imagenet_labels.txt")
+def _load_cpu_model(name: str):
+    """Load a torchvision model onto CPU (cached after first load)."""
+    if name in _cpu_models:
+        return _cpu_models[name]
 
-def get_labels() -> list[str]:
-    if not _LABELS_CACHE.exists():
-        urllib.request.urlretrieve(IMAGENET_LABELS_URL, _LABELS_CACHE)
-    return _LABELS_CACHE.read_text().strip().splitlines()
+    import torch
+    import torchvision.models as models
+    import torchvision.transforms as T
 
-LABELS = get_labels()
+    model_map = {
+        "resnet50":       (models.resnet50,       models.ResNet50_Weights.DEFAULT),
+        "efficientnet_b0":(models.efficientnet_b0,models.EfficientNet_B0_Weights.DEFAULT),
+        "mobilenet_v3":   (models.mobilenet_v3_small, models.MobileNet_V3_Small_Weights.DEFAULT),
+    }
+    # The UI sends short names; map them onto the torchvision keys
+    aliases = {"efficientnet": "efficientnet_b0", "mobilenet": "mobilenet_v3"}
+    name = aliases.get(name, name)
+    if name not in model_map:
+        name = "resnet50"
+
+    factory, weights = model_map[name]
+    model = factory(weights=weights)
+    model.eval()
+    _cpu_models[name] = (model, weights)
+    return model, weights
 
 
-def classify(img: Image.Image) -> list[dict]:
-    tensor = preprocess(img.convert("RGB")).unsqueeze(0).to(DEVICE)
+def _classify_cpu(raw_bytes: bytes, model_name: str, top_n: int) -> dict:
+    """Run classification on CPU and return a result dict."""
+    import torch
+    from PIL import Image
+
+    model, weights = _load_cpu_model(model_name)
+    transform = weights.transforms()
+
+    img = Image.open(io.BytesIO(raw_bytes)).convert("RGB")
+    tensor = transform(img).unsqueeze(0)
+
+    t0 = time.perf_counter()
     with torch.no_grad():
-        probs = torch.softmax(model(tensor), dim=1)[0]
-    top5  = probs.topk(5)
-    return [
-        {"label": LABELS[idx], "confidence": round(prob.item() * 100, 2)}
-        for prob, idx in zip(top5.values, top5.indices)
+        logits = model(tensor)
+        probs  = torch.softmax(logits, dim=1)[0]
+    elapsed = time.perf_counter() - t0
+
+    # Build label list from weights metadata
+    categories = weights.meta["categories"]
+    top_indices = probs.argsort(descending=True)[:top_n].tolist()
+    predictions = [
+        {
+            "rank":       i + 1,
+            "label":      categories[idx].replace("_", " "),
+            "confidence": round(float(probs[idx].item()) * 100, 2),
+        }
+        for i, idx in enumerate(top_indices)
     ]
 
+    return {
+        "model":        model_name,
+        "predictions":  predictions,
+        "inference_ms": round(elapsed * 1000, 1),
+        "device":       "cpu",
+    }
+
+
+# ── Routes ────────────────────────────────────────────────────────────
 
 @app.route("/")
 def index():
@@ -55,24 +93,69 @@ def index():
 
 @app.route("/api/classify", methods=["POST"])
 def classify_route():
-    if "image" not in request.files:
-        return jsonify({"error": "No image uploaded"}), 400
+    # File upload path
+    if "image" in request.files:
+        file       = request.files["image"]
+        model_name = request.form.get("model", "resnet50")
+        top_n      = int(request.form.get("top_n", "10"))
+        raw        = file.read()
 
-    file  = request.files["image"]
-    image = Image.open(io.BytesIO(file.read()))
+        # Try necron GPU first
+        try:
+            resp = http.post(
+                f"{NECRON}/classify",
+                files={"image": (file.filename, raw, file.content_type)},
+                data={"model": model_name, "top_n": str(top_n)},
+                timeout=(CONNECT_TIMEOUT, READ_TIMEOUT),
+            )
+            return (resp.content, resp.status_code, {"Content-Type": "application/json"})
+        except http.exceptions.RequestException:
+            pass
 
-    # Thumbnail for response preview
-    thumb = image.copy()
-    thumb.thumbnail((300, 300))
-    buf = io.BytesIO()
-    thumb.save(buf, format="JPEG", quality=85)
-    thumb_b64 = base64.b64encode(buf.getvalue()).decode()
+        # CPU fallback
+        try:
+            result = _classify_cpu(raw, model_name, top_n)
+            result["cpu_fallback"] = True
+            return jsonify(result)
+        except Exception as e:
+            return jsonify({"error": f"Classification failed: {e}", "gpu_offline": True}), 503
 
-    predictions = classify(image)
+    # URL path
+    if request.is_json and request.json.get("url"):
+        data       = request.json
+        url        = data["url"]
+        model_name = data.get("model", "resnet50")
+        top_n      = int(data.get("top_n", 10))
 
-    return jsonify({"predictions": predictions, "thumb": thumb_b64})
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=8) as r:
+                raw = r.read()
+        except Exception as e:
+            return jsonify({"error": f"Could not fetch URL: {e}"}), 400
+
+        # Try necron GPU first
+        try:
+            resp = http.post(
+                f"{NECRON}/classify",
+                files={"image": ("url_image.jpg", raw, "image/jpeg")},
+                data={"model": model_name, "top_n": str(top_n)},
+                timeout=(CONNECT_TIMEOUT, READ_TIMEOUT),
+            )
+            return (resp.content, resp.status_code, {"Content-Type": "application/json"})
+        except http.exceptions.RequestException:
+            pass
+
+        # CPU fallback
+        try:
+            result = _classify_cpu(raw, model_name, top_n)
+            result["cpu_fallback"] = True
+            return jsonify(result)
+        except Exception as e:
+            return jsonify({"error": f"Classification failed: {e}", "gpu_offline": True}), 503
+
+    return jsonify({"error": "No image provided"}), 400
 
 
 if __name__ == "__main__":
-    print(f"Running on device: {DEVICE}")
     app.run(debug=True, port=5004)

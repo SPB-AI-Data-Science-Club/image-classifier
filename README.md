@@ -1,29 +1,27 @@
 # Image Classifier
 
-Upload any image and a pretrained **ResNet-50** model classifies it from 1,000 ImageNet categories. Returns top-5 predictions with confidence scores.
+Classify any image with ImageNet-pretrained CNNs, with automatic GPU-to-CPU failover.
 
-Auto-detects GPU — runs on CPU by default, CUDA on necron.
+**Live demo:** [classifier.spbdatascience.org](https://classifier.spbdatascience.org)
 
-## Quick Start
+## Features
+
+- Three models: ResNet-50, EfficientNet-B0, MobileNet-V3
+- File upload or direct image URL
+- Top-N predictions (up to 20) with animated confidence bars
+- Tries the club's RTX 5080 worker first; if it is offline, inference falls back to CPU torchvision on the VPS so the demo never goes dark
+
+## How it works
+
+The Flask app forwards uploads to a GPU worker over Tailscale. On connection failure it lazily loads the requested torchvision model on CPU (cached after first load), applies the model's own preprocessing transforms, and serves the softmax top-N locally. The response includes which device served the request.
+
+## Stack
+
+Python, Flask, PyTorch, torchvision, Pillow
+
+## Local development
 
 ```bash
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+pip install flask requests torch torchvision pillow
 python app.py
-# → http://localhost:5004
 ```
-
-The model weights (~100 MB) download automatically on first run via torchvision.
-
-## Running on necron (RTX 5080)
-
-```bash
-ssh necron   # Tailscale
-cd ~/projects/image-classifier
-source .venv/bin/activate && python app.py
-# CUDA detected automatically — inference is near-instant
-```
-
-## Tech Stack
-
-Python · Flask · PyTorch · torchvision ResNet-50 · Pillow

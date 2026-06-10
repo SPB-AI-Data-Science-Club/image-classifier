@@ -1,140 +1,412 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Image Classifier - SPB AI Club</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <link rel="icon" type="image/png" href="/static/logo.png" />
+  <title>Image Classifier</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#090909;--surface:#141414;--surface-2:#1a1a1a;--border:#222;--border-l:#2e2e2e;--text:#ebebeb;--dim:#999;--muted:#666;--accent:#8b0044;--accent2:#660033;--radius:10px}
+    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;line-height:1.6}
+
+    .shell{display:grid;grid-template-columns:280px 1fr;min-height:100vh}
+    .sidebar{background:#0d0d0d;border-right:1px solid var(--border);padding:2rem 1.5rem;display:flex;flex-direction:column;gap:1.5rem;position:sticky;top:0;height:100vh;overflow-y:auto}
+    .main{display:grid;grid-template-columns:1fr 1fr;gap:1.75rem;padding:2.5rem;align-content:start}
+
+    .logo{display:flex;align-items:center;gap:.75rem}
+    .logo-icon{width:34px;height:34px;background:#660033;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .logo-name{font-size:.85rem;font-weight:700;line-height:1.2}
+    .logo-sub{font-size:.6rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+
+    .section-label{font-size:.62rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:.6rem}
+
+    .tab-row{display:flex;gap:.35rem;margin-bottom:1rem}
+    .tab{flex:1;padding:.45rem .5rem;border-radius:6px;font-size:.75rem;font-weight:600;text-align:center;cursor:pointer;border:1px solid var(--border-l);color:var(--dim);background:var(--surface-2);transition:all .15s}
+    .tab.active{background:rgba(102,0,51,.3);border-color:rgba(102,0,51,.5);color:#fff}
+
+    .model-list{display:flex;flex-direction:column;gap:.35rem}
+    .model-opt{display:flex;align-items:flex-start;gap:.65rem;padding:.6rem .75rem;border-radius:8px;border:1px solid var(--border);cursor:pointer;transition:all .15s;background:var(--surface-2)}
+    .model-opt:hover{border-color:var(--border-l)}
+    .model-opt.selected{border-color:rgba(102,0,51,.5);background:rgba(102,0,51,.15)}
+    .model-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--border-l);flex-shrink:0;margin-top:2px;transition:all .15s}
+    .model-opt.selected .model-dot{border-color:#8b0044;background:#8b0044}
+    .model-label{font-size:.78rem;font-weight:600;line-height:1.2}
+    .model-desc{font-size:.65rem;color:var(--muted);line-height:1.4;margin-top:.15rem}
+
+    .top-n-row{display:flex;align-items:center;justify-content:space-between}
+    .top-n-val{font-family:'JetBrains Mono',monospace;font-size:.8rem;font-weight:600;color:var(--text);min-width:1.5rem;text-align:center}
+    input[type=range]{-webkit-appearance:none;width:100%;height:4px;border-radius:99px;background:var(--border-l);outline:none;margin:.5rem 0}
+    input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#660033;cursor:pointer}
+
+    .classify-btn{width:100%;padding:.65rem;background:#660033;color:#fff;border:none;border-radius:8px;font-size:.9rem;font-weight:600;font-family:inherit;cursor:pointer;transition:background .2s}
+    .classify-btn:hover{background:#8b0044}
+    .classify-btn:disabled{opacity:.5;cursor:default}
+
+    /* Main panels */
+    .upload-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column}
+    .panel-head{padding:1.1rem 1.4rem;border-bottom:1px solid var(--border);font-size:.78rem;font-weight:600;letter-spacing:.04em}
+    .panel-body{flex:1;padding:1.4rem}
+
+    .drop-zone{border:2px dashed var(--border-l);border-radius:8px;min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.75rem;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+    .drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+    .drop-zone:hover,.drop-zone.drag{border-color:var(--accent);background:rgba(102,0,51,.07)}
+    .drop-icon{color:var(--muted)}
+    .drop-title{font-size:.88rem;font-weight:600;color:var(--dim)}
+    .drop-hint{font-size:.72rem;color:var(--muted)}
+
+    .url-panel{display:none;flex-direction:column;gap:.6rem}
+    input[type=text].url-input{background:var(--surface-2);border:1px solid var(--border-l);border-radius:8px;padding:.65rem .85rem;font-size:.85rem;font-family:inherit;color:var(--text);outline:none;transition:border-color .15s}
+    input[type=text].url-input:focus{border-color:var(--accent)}
+    input[type=text].url-input::placeholder{color:var(--muted)}
+
+    .preview-area{display:none;flex-direction:column;gap:1rem}
+    .preview-img-wrap{border-radius:8px;overflow:hidden;background:var(--surface-2);display:flex;align-items:center;justify-content:center;min-height:200px;max-height:320px}
+    .preview-img{max-width:100%;max-height:320px;display:block;object-fit:contain}
+    .img-meta{display:flex;gap:1rem;flex-wrap:wrap}
+    .meta-chip{font-size:.68rem;font-family:'JetBrains Mono',monospace;color:var(--muted);background:var(--surface-2);border:1px solid var(--border);border-radius:5px;padding:.2rem .55rem}
+    .reset-link{font-size:.72rem;color:var(--muted);cursor:pointer;text-decoration:underline;text-underline-offset:3px;text-align:center}
+    .reset-link:hover{color:var(--dim)}
+
+    /* Results */
+    .results-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column}
+    .results-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.75rem;padding:3rem 2rem;text-align:center;color:var(--muted)}
+    .empty-icon{opacity:.2}
+    .empty-text{font-size:.88rem}
+
+    .pred-list{padding:1rem 1.4rem;display:flex;flex-direction:column;gap:.75rem;overflow-y:auto}
+    .pred-item{display:flex;flex-direction:column;gap:.3rem}
+    .pred-meta{display:flex;align-items:center;gap:.6rem}
+    .pred-rank{font-size:.65rem;font-family:'JetBrains Mono',monospace;color:var(--muted);width:1.2rem;flex-shrink:0}
+    .pred-name{font-size:.82rem;font-weight:500;flex:1;text-transform:capitalize}
+    .pred-pct{font-size:.78rem;font-family:'JetBrains Mono',monospace;font-weight:600;flex-shrink:0}
+    .pred-bar-bg{height:5px;background:var(--surface-2);border-radius:999px;overflow:hidden;margin-left:1.8rem}
+    .pred-bar{height:100%;border-radius:999px;transition:width .5s ease;background:#660033}
+    .pred-item:first-child .pred-name{font-weight:700}
+    .pred-item:first-child .pred-bar{background:#8b0044}
+    .pred-item:first-child .pred-pct{color:#ebebeb}
+
+    .spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:.4rem}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    @media(max-width:900px){.shell{grid-template-columns:1fr}.sidebar{position:static;height:auto;border-right:none;border-bottom:1px solid var(--border)}.main{grid-template-columns:1fr}}
+  </style>
+
+  <!-- GPU status pill (injected) -->
+  <style id="gpu-status-css">
+  .gpu-status-pill{display:inline-flex;align-items:center;gap:.45rem;padding:.28rem .7rem;border-radius:999px;border:1px solid #2a2a2a;background:#181818;font-size:.72rem;font-weight:600;letter-spacing:.03em;cursor:default;white-space:nowrap}
+  .gpu-status-pill .gd{width:7px;height:7px;border-radius:50%;flex-shrink:0;background:#444}
+  .gpu-status-pill .gd.ready{background:#4ade80;box-shadow:0 0 5px #4ade8077;animation:gpuGlow 2s ease-in-out infinite}
+  .gpu-status-pill .gd.busy{background:#fbbf24;box-shadow:0 0 5px #fbbf2477;animation:gpuGlow 1s ease-in-out infinite}
+  .gpu-status-pill .gt{color:#555}
+  .gpu-status-pill .gt.ready{color:#4ade80}
+  .gpu-status-pill .gt.busy{color:#fbbf24}
+  @keyframes gpuGlow{0%,100%{opacity:1}50%{opacity:.35}}
+  </style>
 </head>
 <body>
+<div class="shell">
 
-  <header class="site-header">
-    <div class="header-logo">
-      <div class="logo-mark">IC</div>
-      <div>
-        <div class="header-title">Image Classifier</div>
-        <div class="header-sub">SPB AI &amp; Data Science Club</div>
+  <aside class="sidebar">
+    <div class="logo" style="margin-bottom:.5rem">
+      <img src="/static/logo.png" alt="Image Classifier" style="width:44px;height:44px;border-radius:9px;object-fit:contain;display:block;flex-shrink:0;" />
+      <div class="logo-name">Image Classifier</div>
+    </div>
+    <div class="gpu-status-pill" id="gpuPill"><div class="gd" id="gpuDot"></div><span class="gt" id="gpuTxt">GPU...</span></div>
+
+    <div>
+      <div class="section-label">Model</div>
+      <div class="model-list">
+        <div class="model-opt selected" data-model="resnet50" onclick="selectModel(this)">
+          <div class="model-dot"></div>
+          <div>
+            <div class="model-label">ResNet-50</div>
+            <div class="model-desc">Deep residual network. Strong all-around accuracy.</div>
+          </div>
+        </div>
+        <div class="model-opt" data-model="efficientnet" onclick="selectModel(this)">
+          <div class="model-dot"></div>
+          <div>
+            <div class="model-label">EfficientNet-B0</div>
+            <div class="model-desc">Compact and efficient. Faster inference.</div>
+          </div>
+        </div>
+        <div class="model-opt" data-model="mobilenet" onclick="selectModel(this)">
+          <div class="model-dot"></div>
+          <div>
+            <div class="model-label">MobileNet-V3</div>
+            <div class="model-desc">Lightweight. Optimized for speed.</div>
+          </div>
+        </div>
       </div>
     </div>
-    <a href="https://github.com/SPB-AI-Data-Science-Club/image-classifier" target="_blank" class="header-link">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/>
-      </svg>
-      GitHub
-    </a>
-  </header>
+
+    <div>
+      <div class="section-label">Top N results</div>
+      <div class="top-n-row">
+        <span style="font-size:.75rem;color:var(--dim)">1</span>
+        <input type="range" id="topNSlider" min="1" max="20" value="10" oninput="document.getElementById('topNVal').textContent=this.value"/>
+        <span style="font-size:.75rem;color:var(--dim)">20</span>
+        <span class="top-n-val" id="topNVal">10</span>
+      </div>
+    </div>
+
+    <button class="classify-btn" id="classifyBtn" onclick="classify()" disabled>Classify</button>
+  </aside>
 
   <div class="main">
 
-    <!-- Left: upload + preview -->
-    <div>
-      <!-- Upload zone (shown when no image) -->
-      <div class="upload-zone" id="uploadZone"
-           ondragover="event.preventDefault(); this.classList.add('drag')"
-           ondragleave="this.classList.remove('drag')"
-           ondrop="handleDrop(event)">
-        <input type="file" accept="image/*" onchange="handleFile(this.files[0])" />
-        <div class="upload-icon">
-          <svg width="44" height="44" viewBox="0 0 24 24" fill="none"
-               stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="18" height="18" rx="2"/>
-            <circle cx="8.5" cy="8.5" r="1.5"/>
-            <polyline points="21 15 16 10 5 21"/>
-          </svg>
+    <!-- Upload / URL panel -->
+    <div class="upload-panel">
+      <div class="panel-head">
+        <div class="tab-row" style="margin-bottom:0">
+          <div class="tab active" id="tabFile" onclick="setInputMode('file')">Upload</div>
+          <div class="tab" id="tabUrl" onclick="setInputMode('url')">URL</div>
         </div>
-        <div class="upload-title">Drop an image or click to browse</div>
-        <div class="upload-hint">JPG, PNG, WEBP, GIF - any size</div>
       </div>
+      <div class="panel-body">
 
-      <!-- Preview (shown after image selected) -->
-      <div class="preview-wrap" id="previewWrap">
-        <img id="previewImg" class="preview-img" src="" alt="Preview" />
-        <button class="classify-btn" id="classifyBtn" onclick="classify()">Classify</button>
-        <button class="reset-btn" onclick="reset()">Upload a different image</button>
+        <!-- File mode -->
+        <div id="fileMode">
+          <div class="drop-zone" id="dropZone"
+               ondragover="event.preventDefault();this.classList.add('drag')"
+               ondragleave="this.classList.remove('drag')"
+               ondrop="handleDrop(event)">
+            <input type="file" accept="image/*" onchange="handleFile(this.files[0])"/>
+            <div class="drop-icon">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            </div>
+            <div class="drop-title">Drop image or click to browse</div>
+            <div class="drop-hint">JPG, PNG, WEBP, GIF</div>
+          </div>
+
+          <div class="preview-area" id="previewArea">
+            <div class="preview-img-wrap">
+              <img id="previewImg" class="preview-img" src="" alt="Preview"/>
+            </div>
+            <div class="img-meta" id="imgMeta"></div>
+            <div class="reset-link" onclick="resetUpload()">Choose a different image</div>
+          </div>
+        </div>
+
+        <!-- URL mode -->
+        <div id="urlMode" style="display:none">
+          <div class="url-panel" style="display:flex">
+            <input type="text" class="url-input" id="urlInput" placeholder="https://example.com/image.jpg" oninput="onUrlInput()"/>
+            <div class="drop-hint" style="font-size:.7rem;color:var(--muted)">Paste a direct image URL. Classify will fetch it server-side.</div>
+          </div>
+        </div>
+
       </div>
     </div>
 
-    <!-- Right: results -->
-    <div class="results-panel">
-      <div class="results-label">Predictions</div>
+    <!-- GPU offline banner (spans both columns) -->
+    <div id="gpuOfflineBanner" style="display:none;grid-column:1/-1;background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.25);border-radius:var(--radius);padding:1.1rem 1.4rem">
+      <div style="font-size:.78rem;font-weight:700;color:#f87171;margin-bottom:.2rem">Classification Failed</div>
+      <div style="font-size:.78rem;color:var(--dim)">The GPU server is offline and the CPU fallback encountered an error. Please try again.</div>
+    </div>
+    <!-- CPU fallback notice -->
+    <div id="cpuBanner" style="display:none;grid-column:1/-1;background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.2);border-radius:var(--radius);padding:.85rem 1.2rem;display:none;align-items:center;gap:.6rem">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <div style="font-size:.76rem;color:#aaa">GPU offline. Running on CPU (slower). Results may take 5-15 seconds.</div>
+    </div>
+
+    <!-- Results panel -->
+    <div class="results-panel" id="resultsPanel">
+      <div class="panel-head">Predictions</div>
       <div class="results-empty" id="resultsEmpty">
-        Upload an image and click Classify to see top-5 predictions from the ResNet-50 model.
+        <div class="empty-icon">
+          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        </div>
+        <div class="empty-text">Upload an image or paste a URL, then click Classify</div>
       </div>
-      <div id="predList"></div>
+      <div class="pred-list" id="predList" style="display:none"></div>
     </div>
 
   </div>
+</div>
 
-  <script>
-    let currentFile = null;
+<script>
+let currentFile = null;
+let inputMode = 'file';
+let selectedModel = 'resnet50';
 
-    function handleDrop(e) {
-      e.preventDefault();
-      document.getElementById('uploadZone').classList.remove('drag');
-      const file = e.dataTransfer.files[0];
-      if (file && file.type.startsWith('image/')) handleFile(file);
-    }
+function setInputMode(m) {
+  inputMode = m;
+  document.getElementById('tabFile').classList.toggle('active', m === 'file');
+  document.getElementById('tabUrl').classList.toggle('active', m === 'url');
+  document.getElementById('fileMode').style.display = m === 'file' ? '' : 'none';
+  document.getElementById('urlMode').style.display  = m === 'url'  ? '' : 'none';
+  updateClassifyBtn();
+}
 
-    function handleFile(file) {
-      if (!file) return;
-      currentFile = file;
-      const reader = new FileReader();
-      reader.onload = e => {
-        document.getElementById('previewImg').src = e.target.result;
-        document.getElementById('uploadZone').style.display  = 'none';
-        document.getElementById('previewWrap').classList.add('visible');
-        document.getElementById('predList').innerHTML = '';
-        document.getElementById('resultsEmpty').style.display = 'block';
-      };
-      reader.readAsDataURL(file);
-    }
+function selectModel(el) {
+  document.querySelectorAll('.model-opt').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedModel = el.dataset.model;
+}
 
-    function reset() {
-      currentFile = null;
-      document.getElementById('previewImg').src = '';
-      document.getElementById('uploadZone').style.display   = '';
-      document.getElementById('previewWrap').classList.remove('visible');
-      document.getElementById('predList').innerHTML = '';
-      document.getElementById('resultsEmpty').style.display = 'block';
-    }
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropZone').classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) handleFile(file);
+}
 
-    async function classify() {
-      if (!currentFile) return;
-      const btn = document.getElementById('classifyBtn');
-      btn.disabled = true;
-      btn.textContent = 'Classifying...';
+function handleFile(file) {
+  if (!file) return;
+  currentFile = file;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('previewImg').src = e.target.result;
+    document.getElementById('dropZone').style.display = 'none';
+    document.getElementById('previewArea').style.display = 'flex';
+    document.getElementById('imgMeta').innerHTML =
+      `<span class="meta-chip">${file.name.split('.').pop().toUpperCase()}</span>` +
+      `<span class="meta-chip">${(file.size / 1024).toFixed(1)} KB</span>`;
+    clearResults();
+    updateClassifyBtn();
+  };
+  reader.readAsDataURL(file);
+}
 
+function resetUpload() {
+  currentFile = null;
+  document.getElementById('previewImg').src = '';
+  document.getElementById('dropZone').style.display = '';
+  document.getElementById('previewArea').style.display = 'none';
+  document.getElementById('imgMeta').innerHTML = '';
+  clearResults();
+  updateClassifyBtn();
+}
+
+function onUrlInput() {
+  updateClassifyBtn();
+}
+
+function updateClassifyBtn() {
+  const btn = document.getElementById('classifyBtn');
+  const hasFile = inputMode === 'file' && currentFile;
+  const hasUrl  = inputMode === 'url'  && document.getElementById('urlInput').value.trim();
+  btn.disabled = !(hasFile || hasUrl);
+}
+
+function clearResults() {
+  document.getElementById('predList').style.display = 'none';
+  document.getElementById('predList').innerHTML = '';
+  document.getElementById('resultsEmpty').style.display = 'flex';
+}
+
+async function classify() {
+  const btn = document.getElementById('classifyBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Classifying...';
+  const topN = document.getElementById('topNSlider').value;
+
+  try {
+    let res;
+    if (inputMode === 'file' && currentFile) {
       const form = new FormData();
       form.append('image', currentFile);
-
-      try {
-        const res  = await fetch('/api/classify', { method: 'POST', body: form });
-        if (!res.ok) { const t = await res.text(); throw new Error(t); }
-        const data = await res.json();
-
-        document.getElementById('resultsEmpty').style.display = 'none';
-        document.getElementById('predList').innerHTML = data.predictions
-          .map((p, i) => `
-            <div class="prediction">
-              <div class="pred-meta">
-                <span class="pred-name">${p.label.replace(/_/g, ' ')}</span>
-                <span class="pred-pct">${p.confidence}%</span>
-              </div>
-              <div class="pred-track">
-                <div class="pred-fill" style="width:${Math.min(p.confidence, 100)}%"></div>
-              </div>
-            </div>`)
-          .join('');
-
-      } catch (err) {
-        alert('Classification failed: ' + err.message);
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Classify';
-      }
+      form.append('model', selectedModel);
+      form.append('top_n', topN);
+      res = await fetch('/api/classify', {method: 'POST', body: form});
+    } else {
+      const url = document.getElementById('urlInput').value.trim();
+      res = await fetch('/api/classify', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({url, model: selectedModel, top_n: parseInt(topN)}),
+      });
     }
-  </script>
+    const data = await res.json();
+    if (data.gpu_offline) {
+      document.getElementById('gpuOfflineBanner').style.display = 'block';
+      return;
+    }
+    if (!res.ok) {
+      throw new Error(data.error || 'Classification failed.');
+    }
+    // Show CPU notice if GPU was offline and CPU fallback was used
+    const cpuBanner = document.getElementById('cpuBanner');
+    if (data.cpu_fallback) {
+      cpuBanner.style.display = 'flex';
+    } else {
+      cpuBanner.style.display = 'none';
+    }
+    // Show URL image as preview if in url mode
+    if (inputMode === 'url' && data.thumb) {
+      document.getElementById('dropZone').style.display = 'none';
+      document.getElementById('previewImg').src = 'data:image/jpeg;base64,' + data.thumb;
+      document.getElementById('previewArea').style.display = 'flex';
+      const info = data.info;
+      document.getElementById('imgMeta').innerHTML =
+        `<span class="meta-chip">${info.width}x${info.height}px</span>` +
+        `<span class="meta-chip">${info.size_kb} KB</span>`;
+    } else if (data.info) {
+      const info = data.info;
+      document.getElementById('imgMeta').innerHTML =
+        `<span class="meta-chip">${currentFile.name.split('.').pop().toUpperCase()}</span>` +
+        `<span class="meta-chip">${info.width}x${info.height}px</span>` +
+        `<span class="meta-chip">${info.size_kb} KB</span>`;
+    }
+
+    renderPredictions(data.predictions);
+
+  } catch(err) {
+    alert(err.message);
+    clearResults();
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Classify';
+    updateClassifyBtn();
+  }
+}
+
+function renderPredictions(preds) {
+  const top = preds[0] ? preds[0].confidence : 100;
+  const list = document.getElementById('predList');
+  list.innerHTML = preds.map((p, i) => {
+    const barW = top > 0 ? Math.round((p.confidence / top) * 100) : 0;
+    const label = p.label.replace(/_/g, ' ');
+    return `<div class="pred-item">
+      <div class="pred-meta">
+        <span class="pred-rank">${i+1}</span>
+        <span class="pred-name">${label}</span>
+        <span class="pred-pct">${p.confidence}%</span>
+      </div>
+      <div class="pred-bar-bg"><div class="pred-bar" style="width:0%" data-w="${barW}%"></div></div>
+    </div>`;
+  }).join('');
+  document.getElementById('resultsEmpty').style.display = 'none';
+  list.style.display = 'flex';
+  // animate bars
+  requestAnimationFrame(() => {
+    list.querySelectorAll('.pred-bar').forEach(bar => {
+      bar.style.width = bar.dataset.w;
+    });
+  });
+}
+</script>
+
+<script id="gpu-status-js">
+(function(){
+  function upd(){
+    fetch('https://spbdatascience.org/api/gpu-status')
+      .then(function(r){return r.json();})
+      .then(function(d){
+        var s=d.status||'offline';
+        var dot=document.getElementById('gpuDot');
+        var txt=document.getElementById('gpuTxt');
+        dot.className='gd '+(s==='ready'||s==='busy'?s:'');
+        txt.className='gt '+(s==='ready'||s==='busy'?s:'');
+        txt.textContent=s==='ready'?'RTX 5080 Ready':s==='busy'?'GPU Busy':'GPU Offline';
+      }).catch(function(){
+        document.getElementById('gpuTxt').textContent='GPU Offline';
+      });
+  }
+  upd();setInterval(upd,20000);
+})();
+</script>
 </body>
 </html>
