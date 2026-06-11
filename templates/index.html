@@ -112,7 +112,7 @@
       <a href="https://spbdatascience.org" title="SPB Data Science Club home" style="display:block;flex-shrink:0"><img src="/static/logo.png" alt="Image Classifier" style="width:44px;height:44px;border-radius:9px;object-fit:contain;display:block;flex-shrink:0;" /></a>
       <div class="logo-name">Image Classifier</div>
     </div>
-    <div class="gpu-status-pill" id="gpuPill"><div class="gd" id="gpuDot"></div><span class="gt" id="gpuTxt">GPU...</span></div>
+    <div class="gpu-status-pill" id="gpuPill"><div class="gd" id="gpuDot"></div><span class="gt" id="gpuTxt">GPUs</span></div>
 
     <div>
       <div class="section-label">Model</div>
@@ -400,9 +400,9 @@ function renderPredictions(preds) {
         var txt=document.getElementById('gpuTxt');
         dot.className='gd '+(s==='ready'||s==='busy'?s:'');
         txt.className='gt '+(s==='ready'||s==='busy'?s:'');
-        txt.textContent=s==='ready'?'GPU Online':s==='busy'?'GPU Busy':'GPU Offline';
+        txt.textContent=s==='ready'?'GPUs Online':s==='busy'?'GPUs Busy':'GPUs Offline';
       }).catch(function(){
-        document.getElementById('gpuTxt').textContent='GPU Offline';
+        document.getElementById('gpuTxt').textContent='GPUs Offline';
       });
   }
   upd();setInterval(upd,20000);
