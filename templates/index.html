@@ -121,21 +121,21 @@
           <div class="model-dot"></div>
           <div>
             <div class="model-label">ResNet-50</div>
-            <div class="model-desc">Deep residual network. Strong all-around accuracy.</div>
+            <div class="model-desc">Deep residual network with strong all-around accuracy.</div>
           </div>
         </div>
         <div class="model-opt" data-model="efficientnet" onclick="selectModel(this)">
           <div class="model-dot"></div>
           <div>
             <div class="model-label">EfficientNet-B0</div>
-            <div class="model-desc">Compact and efficient. Faster inference.</div>
+            <div class="model-desc">Compact architecture tuned for efficient inference.</div>
           </div>
         </div>
         <div class="model-opt" data-model="mobilenet" onclick="selectModel(this)">
           <div class="model-dot"></div>
           <div>
             <div class="model-label">MobileNet-V3</div>
-            <div class="model-desc">Lightweight. Optimized for speed.</div>
+            <div class="model-desc">Lightweight network optimized for speed.</div>
           </div>
         </div>
       </div>
@@ -208,7 +208,7 @@
     <!-- CPU fallback notice -->
     <div id="cpuBanner" style="display:none;grid-column:1/-1;background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.2);border-radius:var(--radius);padding:.85rem 1.2rem;display:none;align-items:center;gap:.6rem">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-      <div style="font-size:.76rem;color:#b4c1d8">GPU offline. Running on CPU (slower). Results may take 5-15 seconds.</div>
+      <div style="font-size:.76rem;color:#b4c1d8">The GPU is offline, so inference is running on CPU and may take 5 to 15 seconds.</div>
     </div>
 
     <!-- Results panel -->
