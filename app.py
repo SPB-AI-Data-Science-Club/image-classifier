@@ -157,5 +157,14 @@ def classify_route():
     return jsonify({"error": "No image provided"}), 400
 
 
+
+@app.after_request
+def _no_html_cache(resp):
+    # Browsers heuristically cache HTML served without Cache-Control, which
+    # leaves visitors on stale pages after a deploy. Force revalidation.
+    if resp.mimetype == "text/html":
+        resp.headers["Cache-Control"] = "no-cache"
+    return resp
+
 if __name__ == "__main__":
     app.run(debug=True, port=5004)
