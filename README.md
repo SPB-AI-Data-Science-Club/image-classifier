@@ -9,7 +9,7 @@ Classify any image with ImageNet-pretrained CNNs, with automatic GPU-to-CPU fail
 - Three models: ResNet-50, EfficientNet-B0, MobileNet-V3
 - File upload or direct image URL
 - Top-N predictions (up to 20) with animated confidence bars
-- Tries the club's GPU servers first; if it is offline, inference falls back to CPU torchvision on the VPS so the demo never goes dark
+- Tries the club's GPU servers first; if they are offline, inference falls back to CPU torchvision on the VPS so the demo stays available
 
 ## How it works
 
