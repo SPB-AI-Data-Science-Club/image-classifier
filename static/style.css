@@ -1,16 +1,16 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --burgundy:   #660033;
-  --burgundy-l: #8b0044;
-  --bg:         #0d0d0d;
-  --surface:    #141414;
-  --surface-2:  #1c1c1c;
-  --border:     #242424;
-  --border-l:   #2e2e2e;
-  --text:       #e8e8e8;
-  --muted:      #666;
-  --dim:        #999;
+  --burgundy:   #3f74d4;
+  --burgundy-l: #6494e8;
+  --bg:         #0c1322;
+  --surface:    #141f36;
+  --surface-2:  #16223c;
+  --border:     #1b2845;
+  --border-l:   #2c3a5c;
+  --text:       #e9eef8;
+  --muted:      #6e7f9d;
+  --dim:        #94a3c0;
   --radius:     10px;
 }
 
@@ -92,7 +92,7 @@ body {
   gap: .6rem;
 }
 .upload-zone:hover,
-.upload-zone.drag { border-color: var(--burgundy); background: rgba(102,0,51,.04); }
+.upload-zone.drag { border-color: var(--burgundy); background: rgba(63, 116, 212,.04); }
 
 .upload-zone input[type=file] {
   position: absolute;

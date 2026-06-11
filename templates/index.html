@@ -7,15 +7,15 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    :root{--bg:#090909;--surface:#141414;--surface-2:#1a1a1a;--border:#222;--border-l:#2e2e2e;--text:#ebebeb;--dim:#999;--muted:#666;--accent:#8b0044;--accent2:#660033;--radius:10px}
+    :root{--bg:#0c1322;--surface:#141f36;--surface-2:#16223c;--border:#22304d;--border-l:#2c3a5c;--text:#e9eef8;--dim:#94a3c0;--muted:#6e7f9d;--accent:#6494e8;--accent2:#3f74d4;--radius:10px}
     body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;line-height:1.6}
 
     .shell{display:grid;grid-template-columns:280px 1fr;min-height:100vh}
-    .sidebar{background:#0d0d0d;border-right:1px solid var(--border);padding:2rem 1.5rem;display:flex;flex-direction:column;gap:1.5rem;position:sticky;top:0;height:100vh;overflow-y:auto}
+    .sidebar{background:#0c1322;border-right:1px solid var(--border);padding:2rem 1.5rem;display:flex;flex-direction:column;gap:1.5rem;position:sticky;top:0;height:100vh;overflow-y:auto}
     .main{display:grid;grid-template-columns:1fr 1fr;gap:1.75rem;padding:2.5rem;align-content:start}
 
     .logo{display:flex;align-items:center;gap:.75rem}
-    .logo-icon{width:34px;height:34px;background:#660033;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .logo-icon{width:34px;height:34px;background:#3f74d4;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
     .logo-name{font-size:.85rem;font-weight:700;line-height:1.2}
     .logo-sub{font-size:.6rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
 
@@ -23,24 +23,24 @@
 
     .tab-row{display:flex;gap:.35rem;margin-bottom:1rem}
     .tab{flex:1;padding:.45rem .5rem;border-radius:6px;font-size:.75rem;font-weight:600;text-align:center;cursor:pointer;border:1px solid var(--border-l);color:var(--dim);background:var(--surface-2);transition:all .15s}
-    .tab.active{background:rgba(102,0,51,.3);border-color:rgba(102,0,51,.5);color:#fff}
+    .tab.active{background:rgba(63, 116, 212,.3);border-color:rgba(63, 116, 212,.5);color:#fff}
 
     .model-list{display:flex;flex-direction:column;gap:.35rem}
     .model-opt{display:flex;align-items:flex-start;gap:.65rem;padding:.6rem .75rem;border-radius:8px;border:1px solid var(--border);cursor:pointer;transition:all .15s;background:var(--surface-2)}
     .model-opt:hover{border-color:var(--border-l)}
-    .model-opt.selected{border-color:rgba(102,0,51,.5);background:rgba(102,0,51,.15)}
+    .model-opt.selected{border-color:rgba(63, 116, 212,.5);background:rgba(63, 116, 212,.15)}
     .model-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--border-l);flex-shrink:0;margin-top:2px;transition:all .15s}
-    .model-opt.selected .model-dot{border-color:#8b0044;background:#8b0044}
+    .model-opt.selected .model-dot{border-color:#6494e8;background:#6494e8}
     .model-label{font-size:.78rem;font-weight:600;line-height:1.2}
     .model-desc{font-size:.65rem;color:var(--muted);line-height:1.4;margin-top:.15rem}
 
     .top-n-row{display:flex;align-items:center;justify-content:space-between}
     .top-n-val{font-family:'JetBrains Mono',monospace;font-size:.8rem;font-weight:600;color:var(--text);min-width:1.5rem;text-align:center}
     input[type=range]{-webkit-appearance:none;width:100%;height:4px;border-radius:99px;background:var(--border-l);outline:none;margin:.5rem 0}
-    input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#660033;cursor:pointer}
+    input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#3f74d4;cursor:pointer}
 
-    .classify-btn{width:100%;padding:.65rem;background:#660033;color:#fff;border:none;border-radius:8px;font-size:.9rem;font-weight:600;font-family:inherit;cursor:pointer;transition:background .2s}
-    .classify-btn:hover{background:#8b0044}
+    .classify-btn{width:100%;padding:.65rem;background:#3f74d4;color:#fff;border:none;border-radius:8px;font-size:.9rem;font-weight:600;font-family:inherit;cursor:pointer;transition:background .2s}
+    .classify-btn:hover{background:#6494e8}
     .classify-btn:disabled{opacity:.5;cursor:default}
 
     /* Main panels */
@@ -50,7 +50,7 @@
 
     .drop-zone{border:2px dashed var(--border-l);border-radius:8px;min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.75rem;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
     .drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
-    .drop-zone:hover,.drop-zone.drag{border-color:var(--accent);background:rgba(102,0,51,.07)}
+    .drop-zone:hover,.drop-zone.drag{border-color:var(--accent);background:rgba(63, 116, 212,.07)}
     .drop-icon{color:var(--muted)}
     .drop-title{font-size:.88rem;font-weight:600;color:var(--dim)}
     .drop-hint{font-size:.72rem;color:var(--muted)}
@@ -81,10 +81,10 @@
     .pred-name{font-size:.82rem;font-weight:500;flex:1;text-transform:capitalize}
     .pred-pct{font-size:.78rem;font-family:'JetBrains Mono',monospace;font-weight:600;flex-shrink:0}
     .pred-bar-bg{height:5px;background:var(--surface-2);border-radius:999px;overflow:hidden;margin-left:1.8rem}
-    .pred-bar{height:100%;border-radius:999px;transition:width .5s ease;background:#660033}
+    .pred-bar{height:100%;border-radius:999px;transition:width .5s ease;background:#3f74d4}
     .pred-item:first-child .pred-name{font-weight:700}
-    .pred-item:first-child .pred-bar{background:#8b0044}
-    .pred-item:first-child .pred-pct{color:#ebebeb}
+    .pred-item:first-child .pred-bar{background:#6494e8}
+    .pred-item:first-child .pred-pct{color:#e9eef8}
 
     .spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:.4rem}
     @keyframes spin{to{transform:rotate(360deg)}}
@@ -94,11 +94,11 @@
 
   <!-- GPU status pill (injected) -->
   <style id="gpu-status-css">
-  .gpu-status-pill{display:inline-flex;align-items:center;gap:.45rem;padding:.28rem .7rem;border-radius:999px;border:1px solid #2a2a2a;background:#181818;font-size:.72rem;font-weight:600;letter-spacing:.03em;cursor:default;white-space:nowrap}
-  .gpu-status-pill .gd{width:7px;height:7px;border-radius:50%;flex-shrink:0;background:#444}
+  .gpu-status-pill{display:inline-flex;align-items:center;gap:.45rem;padding:.28rem .7rem;border-radius:999px;border:1px solid #22304d;background:#141f36;font-size:.72rem;font-weight:600;letter-spacing:.03em;cursor:default;white-space:nowrap}
+  .gpu-status-pill .gd{width:7px;height:7px;border-radius:50%;flex-shrink:0;background:#38486e}
   .gpu-status-pill .gd.ready{background:#4ade80;box-shadow:0 0 5px #4ade8077;animation:gpuGlow 2s ease-in-out infinite}
   .gpu-status-pill .gd.busy{background:#fbbf24;box-shadow:0 0 5px #fbbf2477;animation:gpuGlow 1s ease-in-out infinite}
-  .gpu-status-pill .gt{color:#555}
+  .gpu-status-pill .gt{color:#4a5c84}
   .gpu-status-pill .gt.ready{color:#4ade80}
   .gpu-status-pill .gt.busy{color:#fbbf24}
   @keyframes gpuGlow{0%,100%{opacity:1}50%{opacity:.35}}
@@ -208,7 +208,7 @@
     <!-- CPU fallback notice -->
     <div id="cpuBanner" style="display:none;grid-column:1/-1;background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.2);border-radius:var(--radius);padding:.85rem 1.2rem;display:none;align-items:center;gap:.6rem">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-      <div style="font-size:.76rem;color:#aaa">GPU offline. Running on CPU (slower). Results may take 5-15 seconds.</div>
+      <div style="font-size:.76rem;color:#a3b1cc">GPU offline. Running on CPU (slower). Results may take 5-15 seconds.</div>
     </div>
 
     <!-- Results panel -->
